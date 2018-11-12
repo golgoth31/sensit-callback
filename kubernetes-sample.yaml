@@ -1,0 +1,66 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensit-callback
+spec:
+  selector:
+    matchLabels:
+      app: sensit-callback
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sensit-callback
+    spec:
+      containers:
+        - name: sensit-callback
+          image: localhost:5000/sensit-callback
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 9292
+          # use args to overide some data
+          # args:
+          # log level
+          #   - -l INFO
+          # binding port
+          #   - -p 9292
+          # security token
+          #   - -t <security token>
+          env:
+            # edit this value to force an update
+            - name: FORCE_ROLLING
+              value: "1"
+            # define security token; overriden by '-t' flag
+            - name: bearerToken
+              value: "<security token>"
+              # use secret for better security
+              # valueFrom:
+              # secretKeyRef:
+              #   name: bearerToken
+              #   key: bearerToken
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: sensit-callback
+spec:
+  selector:
+    app: sensit-callback
+  ports:
+  - protocol: TCP
+    port: 9292
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: sensit-callback
+spec:
+  rules:
+  - host: "sensit-callback.notrenet.com"
+    http:
+      paths:
+      - backend:
+          serviceName: sensit-callback
+          servicePort: 9292

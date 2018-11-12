@@ -1,0 +1,13 @@
+---
+input:
+  type: sigfox
+  mode:
+    name: sqs
+    readqURL: < SQS Queue URL >
+
+output:
+  type: influxdb
+  host: http://<influx host>:8086
+
+log:
+  level: DEBUG
