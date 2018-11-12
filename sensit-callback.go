@@ -19,10 +19,10 @@ import (
 	"log"
 	"os"
 
-	"forge.notrenet.com/domosense/sensit-callback/config"
-	"forge.notrenet.com/domosense/sensit-callback/input/aws"
-	"forge.notrenet.com/domosense/sensit-callback/output/influxdb"
-	"forge.notrenet.com/domosense/sensit-callback/payload"
+	"github.com/golgoth31/sensit-callback/config"
+	"github.com/golgoth31/sensit-callback/input/aws"
+	"github.com/golgoth31/sensit-callback/output/influxdb"
+	"github.com/golgoth31/sensit-callback/payload"
 	"github.com/hashicorp/logutils"
 )
 

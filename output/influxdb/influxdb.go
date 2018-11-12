@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"log"
 
-	"forge.notrenet.com/domosense/sensit-callback/config"
-	"forge.notrenet.com/domosense/sensit-callback/sensitTypes"
+	"github.com/golgoth31/sensit-callback/config"
+	"github.com/golgoth31/sensit-callback/sensitTypes"
 
 	influxClient "github.com/influxdata/influxdb/client/v2"
 )

@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"time"
 
-	"forge.notrenet.com/domosense/sensit-callback/sensitTypes"
+	"github.com/golgoth31/sensit-callback/sensitTypes"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"

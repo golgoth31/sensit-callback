@@ -17,7 +17,7 @@ package config
 import (
 	"fmt"
 
-	sensittypes "forge.notrenet.com/domosense/sensit-callback/sensitTypes"
+	sensittypes "github.com/golgoth31/sensit-callback/sensitTypes"
 	"github.com/spf13/viper"
 )
 

@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"log"
 
-	"forge.notrenet.com/domosense/sensit-callback/sensitTypes"
+	"github.com/golgoth31/sensit-callback/sensitTypes"
 
 	"github.com/icza/bitio"
 )
