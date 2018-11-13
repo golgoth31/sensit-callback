@@ -275,14 +275,14 @@
 		{
 			"checksumSHA1": "6zF6NC8Y8L5pwF78AFpWpJMlrHY=",
 			"path": "github.com/influxdata/platform/models",
-			"revision": "78d3a0ba2d3adbd8a81a3beec89298817875f5d7",
-			"revisionTime": "2018-11-12T23:17:25Z"
+			"revision": "b86f2438d83802a4b8514601978754ff51ade4f8",
+			"revisionTime": "2018-11-13T17:10:18Z"
 		},
 		{
 			"checksumSHA1": "Z1jNHNivahCME1jnd0nsJ/rUpfc=",
 			"path": "github.com/influxdata/platform/pkg/escape",
-			"revision": "78d3a0ba2d3adbd8a81a3beec89298817875f5d7",
-			"revisionTime": "2018-11-12T23:17:25Z"
+			"revision": "b86f2438d83802a4b8514601978754ff51ade4f8",
+			"revisionTime": "2018-11-13T17:10:18Z"
 		},
 		{
 			"checksumSHA1": "blwbl9vPvRLtL5QlZgfpLvsFiZ4=",
