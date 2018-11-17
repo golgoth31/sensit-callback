@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/golgoth31/sensit-callback/config"
 	"github.com/golgoth31/sensit-callback/sensitTypes"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -33,11 +34,17 @@ import (
 
 var getMess = true
 var Data sensittypes.CallbackData
+var cfg = config.Config
+
+var readqURL string
 
 // Define AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_REGION as env vars
+func init() {
+	readqURL = cfg.GetString("input.mode.readqURL")
+}
 
 // GetMessage extract messages from SQS
-func GetMessage(readqURL string, payChan chan sensittypes.CallbackData) {
+func GetMessage(payChan chan sensittypes.CallbackData) {
 	log.Print("[DEBUG] Starting SQS module")
 	// sess := session.Must(session.NewSession())
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
@@ -61,14 +68,12 @@ func GetMessage(readqURL string, payChan chan sensittypes.CallbackData) {
 		})
 
 		if err != nil {
-			fmt.Println("Error", err)
+			fmt.Printf("[ERROR] SQS Error: %v", err)
 			return
 		}
 
 		if len(result.Messages) == 0 {
-			fmt.Println("Received no messages")
-			// getMess = false
-			// return
+			log.Print("[DEBUG] Waiting for message")
 		} else {
 			for _, val := range result.Messages {
 				err := json.Unmarshal([]byte(*val.Body), &Data)
@@ -77,7 +82,7 @@ func GetMessage(readqURL string, payChan chan sensittypes.CallbackData) {
 				}
 				datatime, _ := strconv.ParseInt(Data.Time, 10, 64)
 				log.Printf("[DEBUG] Message time: %v", time.Unix(datatime, 0))
-				// payload.Decode(Data.Data)
+				log.Printf("[DEBUG] Message data: %v", val.Body)
 				Data.Timestamp = time.Unix(datatime, 0)
 				payChan <- Data
 				_, err = svc.DeleteMessage(&sqs.DeleteMessageInput{
@@ -86,13 +91,10 @@ func GetMessage(readqURL string, payChan chan sensittypes.CallbackData) {
 				})
 
 				if err != nil {
-					fmt.Println("Delete Error", err)
+					log.Printf("[DEBUG] Delete Error: %v", err)
 					return
 				}
-
-				// fmt.Println("Message Deleted", resultDelete)
 			}
 		}
-
 	}
 }

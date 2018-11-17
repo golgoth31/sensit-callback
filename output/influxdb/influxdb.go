@@ -25,18 +25,15 @@ import (
 	influxClient "github.com/influxdata/influxdb/client/v2"
 )
 
-var InfluxDBname = "sensit"
-var InfluxDBretention = "3d"
+// var InfluxDBname = "sensit"
+// var InfluxDBretention = "3d"
 var cfg = config.Config
 
-// func init() {
-
-// }
 // queryDB convenience function to query the database
 func queryDB(clnt influxClient.Client, cmd string) (res []influxClient.Result, err error) {
 	q := influxClient.Query{
 		Command:  cmd,
-		Database: InfluxDBname,
+		Database: cfg.GetString("output.influxdb.dbname"),
 	}
 	if response, err := clnt.Query(q); err == nil {
 		if response.Error() != nil {
@@ -60,18 +57,18 @@ func Write(outputChan chan []byte) {
 			Addr: cfg.GetString("output.influxdb.host"),
 		})
 		if err != nil {
-			fmt.Println("Error creating InfluxDB Client: ", err.Error())
+			log.Panicf("[ERROR] Error creating InfluxDB Client: %v", err.Error())
 		}
 		defer clnt.Close()
 
-		_, err = queryDB(clnt, fmt.Sprintf("CREATE DATABASE %s WITH DURATION %s", InfluxDBname, InfluxDBretention))
+		_, err = queryDB(clnt, fmt.Sprintf("CREATE DATABASE %s WITH DURATION %s", cfg.GetString("output.influxdb.dbname"), cfg.GetString("output.influxdb.dbretention")))
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("[ERROR] Cannot create influxdb database: %v", err)
 		}
 
 		var out sensittypes.SensitTempData
 		err = json.Unmarshal(o, &out)
-		log.Println(out)
+		log.Printf("[DEBUG] InfluxDB data point: %v", out)
 		// Create a new point batch
 		bp, _ := influxClient.NewBatchPoints(influxClient.BatchPointsConfig{
 			Database:  "sensit",
@@ -87,7 +84,7 @@ func Write(outputChan chan []byte) {
 		}
 		pt, err := influxClient.NewPoint("sensit", tags, fields, out.Time)
 		if err != nil {
-			fmt.Println("Error: ", err.Error())
+			log.Printf("[ERROR] Error: %v", err.Error())
 		}
 		bp.AddPoint(pt)
 

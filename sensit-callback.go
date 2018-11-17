@@ -40,11 +40,6 @@ func init() {
 }
 
 func main() {
-	// init config
-	// config.InitConfig()
-
-	// domolib.FailOnError(err, "Failed to parse config file")
-
 	// Change log level to configured level
 	LogFilter.SetMinLevel(logutils.LogLevel(cfg.GetString("log.level")))
 	log.SetOutput(LogFilter)
@@ -57,5 +52,5 @@ func main() {
 	sensitoutput.Start()
 
 	// listen sqs
-	sensitsqs.GetMessage(cfg.GetString("input.mode.readqURL"), config.PayloadChan)
+	sensitsqs.GetMessage(config.PayloadChan)
 }
