@@ -21,7 +21,8 @@ import (
 
 	"github.com/golgoth31/sensit-callback/config"
 	"github.com/golgoth31/sensit-callback/input/aws"
-	"github.com/golgoth31/sensit-callback/output/influxdb"
+
+	"github.com/golgoth31/sensit-callback/output"
 	"github.com/golgoth31/sensit-callback/payload"
 	"github.com/hashicorp/logutils"
 )
@@ -40,12 +41,12 @@ func init() {
 
 func main() {
 	// init config
-	config.InitConfig()
+	// config.InitConfig()
 
 	// domolib.FailOnError(err, "Failed to parse config file")
 
 	// Change log level to configured level
-	LogFilter.SetMinLevel(logutils.LogLevel(cfg.Get("log.level").(string)))
+	LogFilter.SetMinLevel(logutils.LogLevel(cfg.GetString("log.level")))
 	log.SetOutput(LogFilter)
 	log.Print("[DEBUG] Starting to listen for sensit callback")
 
@@ -53,8 +54,8 @@ func main() {
 	go sensitpayload.Decode(config.PayloadChan, config.OutputChan)
 
 	// write output
-	go sensitoutput.Write(config.OutputChan)
+	sensitoutput.Start()
 
 	// listen sqs
-	sensitsqs.GetMessage(cfg.Get("input.mode.readqURL").(string), config.PayloadChan)
+	sensitsqs.GetMessage(cfg.GetString("input.mode.readqURL"), config.PayloadChan)
 }

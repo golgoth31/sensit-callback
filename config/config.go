@@ -25,10 +25,11 @@ var Config = viper.New()
 var PayloadChan chan sensittypes.CallbackData
 var OutputChan chan []byte
 
-func InitConfig() {
+func init() {
 	Config.SetConfigName("config")                 // name of config file (without extension)
 	Config.AddConfigPath("/etc/sensit-callback/")  // path to look for the config file in
 	Config.AddConfigPath("$HOME/.sensit-callback") // call multiple times to add many search paths
+	Config.AddConfigPath("/")                      // call multiple times to add many search paths
 	Config.AddConfigPath(".")                      // optionally look for config in the working directory
 	err := Config.ReadInConfig()                   // Find and read the config file
 	if err != nil {                                // Handle errors reading the config file

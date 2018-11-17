@@ -6,8 +6,9 @@ input:
     readqURL: < SQS Queue URL >
 
 output:
-  type: influxdb
-  host: http://<influx host>:8086
+  influxdb:
+    host: http://<influx host>:8086
+    enabled: true
 
 log:
   level: DEBUG

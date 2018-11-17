@@ -12,7 +12,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
-package sensitoutput
+package sensitinfluxdb
 
 import (
 	"encoding/json"
@@ -57,7 +57,7 @@ func Write(outputChan chan []byte) {
 		log.Print("[DEBUG] Starting output module")
 		// Make client
 		clnt, err := influxClient.NewHTTPClient(influxClient.HTTPConfig{
-			Addr: cfg.Get("output.host").(string),
+			Addr: cfg.GetString("output.influxdb.host"),
 		})
 		if err != nil {
 			fmt.Println("Error creating InfluxDB Client: ", err.Error())

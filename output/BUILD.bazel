@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["output.go"],
+    importpath = "github.com/golgoth31/sensit-callback/output",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//sensit-callback/config:go_default_library",
+        "//sensit-callback/output/influxdb:go_default_library",
+    ],
+)

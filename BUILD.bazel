@@ -8,7 +8,7 @@ go_library(
     deps = [
         "//sensit-callback/config:go_default_library",
         "//sensit-callback/input/aws:go_default_library",
-        "//sensit-callback/output/influxdb:go_default_library",
+        "//sensit-callback/output:go_default_library",
         "//sensit-callback/payload:go_default_library",
         "//sensit-callback/vendor/github.com/hashicorp/logutils:go_default_library",
     ],
@@ -24,6 +24,7 @@ go_binary(
 )
 
 load("@io_bazel_rules_docker//go:image.bzl", "go_image")
+
 go_image(
     name = "sensit-callback-base",
     embed = [":go_default_library"],
@@ -33,8 +34,19 @@ go_image(
 )
 
 load("@io_bazel_rules_docker//container:container.bzl", "container_image")
+
 container_image(
     name = "sensit-callback",
     files = [":sensit-callback-bin"],
     entrypoint = ["/sensit-callback-bin"],
+    stamp = True,
+)
+
+load("@io_bazel_rules_docker//container:container.bzl", "container_image")
+
+container_image(
+    name = "latest",
+    files = [":sensit-callback-bin"],
+    entrypoint = ["/sensit-callback-bin"],
+    stamp = True,
 )
