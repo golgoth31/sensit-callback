@@ -18,5 +18,8 @@
 config.yaml
 
 # bazel
-# BUILD*
-WORKSPACE
+!/BUILD*
+BUILD*
+
+# WORKSPACE
+bazel-*

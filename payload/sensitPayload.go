@@ -122,156 +122,157 @@ var doorThresholdAlert uint64
 // Decode paylaod
 func Decode(pc chan sensittypes.CallbackData, o chan []byte) {
 	log.Print("[DEBUG] Starting decode module")
+	for true {
+		p := <-pc
+		decoded, err := hex.DecodeString(p.Data)
+		payloadIoReader := bytes.NewBuffer(decoded)
+		payloadBitReader := bitio.NewReader(payloadIoReader)
 
-	p := <-pc
-	decoded, err := hex.DecodeString(p.Data)
-	payloadIoReader := bytes.NewBuffer(decoded)
-	payloadBitReader := bitio.NewReader(payloadIoReader)
+		// byte 1
+		batteryLevelMsb, err := payloadBitReader.ReadBits(1)
+		FrameType, err = payloadBitReader.ReadBits(2)
+		UplinkPeriod, err = payloadBitReader.ReadBits(2)
+		Mode, err = payloadBitReader.ReadBits(3)
 
-	// byte 1
-	batteryLevelMsb, err := payloadBitReader.ReadBits(1)
-	FrameType, err = payloadBitReader.ReadBits(2)
-	UplinkPeriod, err = payloadBitReader.ReadBits(2)
-	Mode, err = payloadBitReader.ReadBits(3)
+		// byte 2
+		temperatureMsb, err := payloadBitReader.ReadBits(4)
+		batteryLevelLsb, err := payloadBitReader.ReadBits(4)
 
-	// byte 2
-	temperatureMsb, err := payloadBitReader.ReadBits(4)
-	batteryLevelLsb, err := payloadBitReader.ReadBits(4)
+		// byte 3
+		switch {
+		case Mode == 2:
+			lightMask, err = payloadBitReader.ReadBits(2)
+			lightValue, err = payloadBitReader.ReadBits(6)
+		case Mode == 3:
+			magnetMax, err = payloadBitReader.ReadBits(8)
+		default:
+			spare, err = payloadBitReader.ReadBits(1)
+			magnetState, err = payloadBitReader.ReadBits(1)
+			temperatureLsb, err = payloadBitReader.ReadBits(6)
+		}
 
-	// byte 3
-	switch {
-	case Mode == 2:
-		lightMask, err = payloadBitReader.ReadBits(2)
-		lightValue, err = payloadBitReader.ReadBits(6)
-	case Mode == 3:
-		magnetMax, err = payloadBitReader.ReadBits(8)
-	default:
-		spare, err = payloadBitReader.ReadBits(1)
-		magnetState, err = payloadBitReader.ReadBits(1)
-		temperatureLsb, err = payloadBitReader.ReadBits(6)
-	}
+		// byte 4
+		switch {
+		case Mode == 0:
+			firmwareMajor, err = payloadBitReader.ReadBits(4)
+			firmwareMinor, err = payloadBitReader.ReadBits(4)
+			Firmware = fmt.Sprintf("%d.%d", firmwareMajor, firmwareMinor)
+		case Mode == 1:
+			humidityRaw, err = payloadBitReader.ReadBits(8)
+		default:
+			AlertCounter, err = payloadBitReader.ReadBits(8)
+		}
 
-	// byte 4
-	switch {
-	case Mode == 0:
-		firmwareMajor, err = payloadBitReader.ReadBits(4)
-		firmwareMinor, err = payloadBitReader.ReadBits(4)
-		Firmware = fmt.Sprintf("%d.%d", firmwareMajor, firmwareMinor)
-	case Mode == 1:
-		humidityRaw, err = payloadBitReader.ReadBits(8)
-	default:
-		AlertCounter, err = payloadBitReader.ReadBits(8)
-	}
-
-	// Downlink byte 1
-	// test the first bit of the downlink payload: if "EOF", no need to go further in decoding
-	sendingPeriodMsb, err = payloadBitReader.ReadBits(1)
-	if err == nil {
-		log.Print("[DEBUG] Downlink requested")
-		downlinkMode = true
-	} else if fmt.Sprint(err) == "EOF" {
-		downlinkMode = false
-	} else {
-		log.Printf("[CRIT] %v", err)
-	}
-	if downlinkMode {
 		// Downlink byte 1
-		tempAlertLow, err = payloadBitReader.ReadBits(7)
-
-		// Downlink byte 2
-		sendingPeriodLSB, err = payloadBitReader.ReadBits(1)
-		tempAlertHigh, err = payloadBitReader.ReadBits(7)
-
-		// Downlink byte 3
-		lightAlertLow, err = payloadBitReader.ReadBits(8)
-
-		// Downlink byte 4
-		lightAlertHigh, err = payloadBitReader.ReadBits(8)
-
-		// Downlink byte 5
-		accTransientThr, err = payloadBitReader.ReadBits(8)
-
-		// Downlink byte 6
-		accTransientCount, err = payloadBitReader.ReadBits(8)
-
-		// Downlink byte 7
-		disableHighPassFilter, err = payloadBitReader.ReadBits(1)
-		enableDetectionZ, err = payloadBitReader.ReadBits(1)
-		enableDetectionY, err = payloadBitReader.ReadBits(1)
-		enableDetectionX, err = payloadBitReader.ReadBits(1)
-		dstaRate, err = payloadBitReader.ReadBits(2)
-		mods, err = payloadBitReader.ReadBits(2)
-
-		// Downlink byte 8
-		reservedZero, err = payloadBitReader.ReadBits(1)
-		doorThresholdAlert, err = payloadBitReader.ReadBits(7)
-
-		// fmt.Printf("temp => %v", sendingPeriodMsb)
-		// fmt.Printf("humidity => %v", tempAlertLow)
-	}
-
-	// build battery data
-	var batteryByte bytes.Buffer
-	batteryBitWriter := bitio.NewWriter(&batteryByte)
-	batteryBitWriter.WriteBits(0, 3)
-	batteryBitWriter.WriteBits(batteryLevelMsb, 1)
-	batteryBitWriter.WriteBits(batteryLevelLsb, 4)
-	batteryBitWriter.Close()
-	batteryRaw, _ := binary.Uvarint(batteryByte.Bytes())
-	Battery = float64(batteryRaw)*0.05 + batteryConst
-
-	log.Print("[DEBUG] First byte data")
-	log.Printf("[DEBUG] Bat => %v\n", Battery)
-	log.Printf("[DEBUG] FrameType => %v\n", FrameType)
-	log.Printf("[DEBUG] UplinkPeriod => %v\n", UplinkPeriod)
-	log.Printf("[DEBUG] Mode => %v\n", Mode)
-
-	var out []byte
-	switch Mode {
-	// case 0:
-	// 	fmt.Printf("Spare => %v", spare)
-	// 	fmt.Printf("Magnet => %v", magnetState)
-	case 1:
-		var temperatureByte bytes.Buffer
-		temperatureBitWriter := bitio.NewWriter(&temperatureByte)
-		temperatureBitWriter.WriteBits(0, 6)
-		temperatureBitWriter.WriteBits(temperatureMsb, 4)
-		temperatureBitWriter.WriteBits(temperatureLsb, 6)
-		temperatureBitWriter.Close()
-		Temperature = float64(float64(binary.BigEndian.Uint16(temperatureByte.Bytes())-200) / 8)
-		Humidity = float64(humidityRaw) / 2
-		// if err != nil {
-		// 	log.Print(err)
-		// }
-		log.Print("[DEBUG] Temp mode activated")
-		log.Printf("[DEBUG] tempbytes => %v", binary.BigEndian.Uint16(temperatureByte.Bytes()))
-		log.Printf("[DEBUG] temp => %v\n", Temperature)
-		log.Printf("[DEBUG] humidity => %v\n", Humidity)
-		outdata := sensittypes.SensitTempData{
-			Device: p.Device,
-			Time:   p.Timestamp,
-			Temp:   Temperature,
-			Bat:    Battery,
-			Hum:    Humidity,
-			Mode:   "temperature",
+		// test the first bit of the downlink payload: if "EOF", no need to go further in decoding
+		sendingPeriodMsb, err = payloadBitReader.ReadBits(1)
+		if err == nil {
+			log.Print("[DEBUG] Downlink requested")
+			downlinkMode = true
+		} else if fmt.Sprint(err) == "EOF" {
+			downlinkMode = false
+		} else {
+			log.Printf("[CRIT] %v", err)
 		}
-		out, err = json.Marshal(outdata)
-	case 2:
-		switch lightMask {
-		case 0:
-			Light = float64(lightValue) / 96
+		if downlinkMode {
+			// Downlink byte 1
+			tempAlertLow, err = payloadBitReader.ReadBits(7)
+
+			// Downlink byte 2
+			sendingPeriodLSB, err = payloadBitReader.ReadBits(1)
+			tempAlertHigh, err = payloadBitReader.ReadBits(7)
+
+			// Downlink byte 3
+			lightAlertLow, err = payloadBitReader.ReadBits(8)
+
+			// Downlink byte 4
+			lightAlertHigh, err = payloadBitReader.ReadBits(8)
+
+			// Downlink byte 5
+			accTransientThr, err = payloadBitReader.ReadBits(8)
+
+			// Downlink byte 6
+			accTransientCount, err = payloadBitReader.ReadBits(8)
+
+			// Downlink byte 7
+			disableHighPassFilter, err = payloadBitReader.ReadBits(1)
+			enableDetectionZ, err = payloadBitReader.ReadBits(1)
+			enableDetectionY, err = payloadBitReader.ReadBits(1)
+			enableDetectionX, err = payloadBitReader.ReadBits(1)
+			dstaRate, err = payloadBitReader.ReadBits(2)
+			mods, err = payloadBitReader.ReadBits(2)
+
+			// Downlink byte 8
+			reservedZero, err = payloadBitReader.ReadBits(1)
+			doorThresholdAlert, err = payloadBitReader.ReadBits(7)
+
+			// fmt.Printf("temp => %v", sendingPeriodMsb)
+			// fmt.Printf("humidity => %v", tempAlertLow)
+		}
+
+		// build battery data
+		var batteryByte bytes.Buffer
+		batteryBitWriter := bitio.NewWriter(&batteryByte)
+		batteryBitWriter.WriteBits(0, 3)
+		batteryBitWriter.WriteBits(batteryLevelMsb, 1)
+		batteryBitWriter.WriteBits(batteryLevelLsb, 4)
+		batteryBitWriter.Close()
+		batteryRaw, _ := binary.Uvarint(batteryByte.Bytes())
+		Battery = float64(batteryRaw)*0.05 + batteryConst
+
+		log.Print("[DEBUG] First byte data")
+		log.Printf("[DEBUG] Bat => %v\n", Battery)
+		log.Printf("[DEBUG] FrameType => %v\n", FrameType)
+		log.Printf("[DEBUG] UplinkPeriod => %v\n", UplinkPeriod)
+		log.Printf("[DEBUG] Mode => %v\n", Mode)
+
+		var out []byte
+		switch Mode {
+		// case 0:
+		// 	fmt.Printf("Spare => %v", spare)
+		// 	fmt.Printf("Magnet => %v", magnetState)
 		case 1:
-			Light = float64(lightValue) * 8 / 96
+			var temperatureByte bytes.Buffer
+			temperatureBitWriter := bitio.NewWriter(&temperatureByte)
+			temperatureBitWriter.WriteBits(0, 6)
+			temperatureBitWriter.WriteBits(temperatureMsb, 4)
+			temperatureBitWriter.WriteBits(temperatureLsb, 6)
+			temperatureBitWriter.Close()
+			Temperature = float64(float64(binary.BigEndian.Uint16(temperatureByte.Bytes())-200) / 8)
+			Humidity = float64(humidityRaw) / 2
+			// if err != nil {
+			// 	log.Print(err)
+			// }
+			log.Print("[DEBUG] Temp mode activated")
+			log.Printf("[DEBUG] tempbytes => %v", binary.BigEndian.Uint16(temperatureByte.Bytes()))
+			log.Printf("[DEBUG] temp => %v\n", Temperature)
+			log.Printf("[DEBUG] humidity => %v\n", Humidity)
+			outdata := sensittypes.SensitTempData{
+				Device: p.Device,
+				Time:   p.Timestamp,
+				Temp:   Temperature,
+				Bat:    Battery,
+				Hum:    Humidity,
+				Mode:   "temperature",
+			}
+			out, err = json.Marshal(outdata)
 		case 2:
-			Light = float64(lightValue) * 64 / 96
-		case 3:
-			Light = float64(lightValue) * 1024 / 96
+			switch lightMask {
+			case 0:
+				Light = float64(lightValue) / 96
+			case 1:
+				Light = float64(lightValue) * 8 / 96
+			case 2:
+				Light = float64(lightValue) * 64 / 96
+			case 3:
+				Light = float64(lightValue) * 1024 / 96
+			}
+			// fmt.Printf("Light => %v", Light)
+			// case 3:
+			// 	fmt.Printf("Magnet => %v", magnetMax)
 		}
-		// fmt.Printf("Light => %v", Light)
-		// case 3:
-		// 	fmt.Printf("Magnet => %v", magnetMax)
-	}
 
-	// write decoded data to output channel
-	o <- out
+		// write decoded data to output channel
+		o <- out
+	}
 }

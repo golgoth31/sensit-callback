@@ -1,13 +1,21 @@
 # STEP 1 build executable binary
 
 FROM golang:alpine as builder
-WORKDIR $GOPATH/src/sensit-callback/
-COPY sensit-callback.go .
 
 RUN apk add git
-#get dependancies
-#you can also use dep
-RUN go get -d -v
+
+WORKDIR $GOPATH/src/sensit-callback/
+ENV GOOS=linux \
+    GOARCH=amd64 \
+    CGO_ENABLED=0 \
+    GO111MODULE=on
+
+COPY /go.mod /go.sum $GOPATH/src/sensit-callback/
+
+RUN go version && \
+    go mod download
+
+COPY / $GOPATH/src/sensit-callback/
 
 #build the binary
 RUN CGO_ENABLED=0 GOOS=linux go build -o $GOBIN/sensit-callback .

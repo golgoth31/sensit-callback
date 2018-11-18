@@ -1,3 +1,8 @@
+load("@bazel_gazelle//:def.bzl", "gazelle")
+
+# gazelle:prefix github.com/golgoth31/sensit-callback
+gazelle(name = "gazelle")
+
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_binary")
 
 go_library(
@@ -6,11 +11,11 @@ go_library(
     importpath = "github.com/golgoth31/sensit-callback",
     visibility = ["//visibility:private"],
     deps = [
-        "//sensit-callback/config:go_default_library",
-        "//sensit-callback/input/aws:go_default_library",
-        "//sensit-callback/output:go_default_library",
-        "//sensit-callback/payload:go_default_library",
-        "//sensit-callback/vendor/github.com/hashicorp/logutils:go_default_library",
+        "//config:go_default_library",
+        "//input/aws:go_default_library",
+        "//output:go_default_library",
+        "//payload:go_default_library",
+        "@com_github_hashicorp_logutils//:go_default_library",
     ],
 )
 
@@ -41,8 +46,6 @@ container_image(
     entrypoint = ["/sensit-callback-bin"],
     stamp = True,
 )
-
-load("@io_bazel_rules_docker//container:container.bzl", "container_image")
 
 container_image(
     name = "latest",
